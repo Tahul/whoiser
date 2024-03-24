@@ -1,6 +1,6 @@
 import net from 'node:net'
 import dns from 'node:dns/promises'
-import punycode from 'punycode/index'
+import punycode from 'punycode/punycode'
 import { parseDomainWhois, parseSimpleWhois } from './parsers'
 import { isDomain, isTld, requestGetBody, splitStringBy } from './utils'
 
