@@ -25,9 +25,8 @@ export function parseSimpleWhois(whois: string) {
     RNOCHandle: 'contactNoc',
   } as const
 
-  if (whois.includes('returned 0 objects') || whois.includes('No match found')) {
+  if (whois.includes('returned 0 objects') || whois.includes('No match found'))
     return data
-  }
 
   let resultNum = 0
   const groups: any[] = [{}]
@@ -87,19 +86,17 @@ export function parseSimpleWhois(whois: string) {
 
       // check if a label is marked as group
       groupLabels.forEach((groupLabel: string) => {
-        if (!isGroup && Object.keys(lineToGroup).includes(groupLabel)) {
+        if (!isGroup && Object.keys(lineToGroup).includes(groupLabel))
           isGroup = lineToGroup[groupLabel as keyof typeof lineToGroup]
-        }
       })
 
       // check if a info group is a Contact in APNIC result
       // @Link https://www.apnic.net/manage-ip/using-whois/guide/role/
-      if (!isGroup && groupLabels.includes('role')) {
+      if (!isGroup && groupLabels.includes('role'))
         isGroup = `Contact ${group.role.split(' ')[1]}`
-      }
-      else if (!isGroup && groupLabels.includes('person')) {
+
+      else if (!isGroup && groupLabels.includes('person'))
         isGroup = `Contact ${group['nic-hdl']}`
-      }
 
       if (isGroup === 'contact') {
         data.contacts = data.contacts || {}
@@ -305,26 +302,22 @@ export function parseDomainWhois(domain: string, whois: string, ignorePrivacy: b
     || domain.endsWith('.gg')
     || domain.endsWith('.je')
     || domain.endsWith('.as')
-  ) {
+  )
     lines = handleMultiLines(lines)
-  }
 
-  if (domain.endsWith('.gg') || domain.endsWith('.je') || domain.endsWith('.as')) {
+  if (domain.endsWith('.gg') || domain.endsWith('.je') || domain.endsWith('.as'))
     lines = handleMissingColons(lines)
-  }
 
   if (domain.endsWith('.ua')) {
     lines = handleDotUa(lines)
     colon = ':'
   }
 
-  if (domain.endsWith('.jp')) {
+  if (domain.endsWith('.jp'))
     lines = handleJpLines(lines)
-  }
 
-  if (domain.endsWith('.it')) {
+  if (domain.endsWith('.it'))
     lines = handleDotIt(lines)
-  }
 
   lines = lines.map(l => l.trim())
 
@@ -333,33 +326,29 @@ export function parseDomainWhois(domain: string, whois: string, ignorePrivacy: b
       let [label, value] = splitStringBy(line, line.indexOf(':')).map((info: string) => info.trim())
 
       // fix whois line with double color, ex: "Label:: value"
-      if (value.startsWith(':')) {
+      if (value.startsWith(':'))
         value = value.slice(1)
-      }
 
       value = value.trim()
 
       // rename labels to more common format
-      if (renameLabels[label.toLowerCase() as keyof typeof renameLabels]) {
+      if (renameLabels[label.toLowerCase() as keyof typeof renameLabels])
         label = renameLabels[label.toLowerCase() as keyof typeof renameLabels]
-      }
 
       // remove redacted data
-      if (ignorePrivacy && noData.includes(value.toLowerCase())) {
+      if (ignorePrivacy && noData.includes(value.toLowerCase()))
         value = ''
-      }
 
       if (data[label] && Array.isArray(data[label])) {
         data[label].push(value)
       }
       else if (!ignoreLabels.includes(label.toLowerCase()) && !ignoreTexts.some(text => label.toLowerCase().includes(text))) {
         // WHOIS field already exists, if so append data
-        if (data[label] && data[label] !== value) {
+        if (data[label] && data[label] !== value)
           data[label] = `${data[label]} ${value}`.trim()
-        }
-        else {
+
+        else
           data[label] = value
-        }
       }
       else {
         text.push(line)
@@ -381,9 +370,8 @@ export function parseDomainWhois(domain: string, whois: string, ignorePrivacy: b
 
   // remove multiple empty lines
   text = text.join('\n').trim()
-  while (text.includes('\n\n\n')) {
+  while (text.includes('\n\n\n'))
     text = text.replace('\n\n\n', '\n')
-  }
 
   data.text = text.split('\n')
 
@@ -401,7 +389,8 @@ function handleDotUa(lines: string[]) {
         .toLowerCase()
     }
     else if (!line.startsWith('%') && line.includes(': ')) {
-      if (line.startsWith('registrar')) { line = 'id' }
+      if (line.startsWith('registrar'))
+        line = 'id'
       lines[index] = `${flag} ${line}`
     }
   })
@@ -414,9 +403,8 @@ function handleDotIt(lines: string[]) {
 
   for (const line of lines) {
     // Ignore comments and empty lines
-    if (line.startsWith('*') || line === '') {
+    if (line.startsWith('*') || line === '')
       continue
-    }
 
     // Collapse whitespace
     const collapsed = line.replace(/\s+/g, ' ').trim()
@@ -428,12 +416,11 @@ function handleDotIt(lines: string[]) {
       }
       else {
         // Special handling for "Nameservers" section
-        if (line === 'Nameservers') {
+        if (line === 'Nameservers')
           section = 'Name Server:'
-        }
-        else {
+
+        else
           section = collapsed
-        }
       }
     }
 
@@ -461,17 +448,15 @@ function handleMultiLines(lines: string[]) {
       // Check next lines
       for (let i = 1; i <= 8; i++) {
         // if no line or empty line
-        if (!lines[index + i] || !lines[index + i].trim().length) {
+        if (!lines[index + i] || !lines[index + i].trim().length)
           break
-        }
 
         // if tabbed line or line with value only, prefix the line with main label
         if ((lines[index + i].startsWith('  ') && lines[index + i].includes(': ')) || !lines[index + i].endsWith(':')) {
           let label = line.trim()
 
-          if (lines[index + i].includes(':') && label.endsWith(':')) {
+          if (lines[index + i].includes(':') && label.endsWith(':'))
             label = label.slice(0, -1)
-          }
 
           lines[index + i] = `${label} ${lines[index + i].replace('\t', ' ').trim()}`
           addedLabel = true
@@ -479,9 +464,8 @@ function handleMultiLines(lines: string[]) {
       }
 
       // remove this line if it was just a label for other lines
-      if (addedLabel) {
+      if (addedLabel)
         lines[index] = ''
-      }
     }
   })
 
@@ -498,9 +482,8 @@ function handleJpLines(lines: any[]) {
     let line = lines.shift()
 
     // handle lines that start with "a. [label]"
-    if (/^[a-z]. \[/.test(line)) {
+    if (/^[a-z]. \[/.test(line))
       line = line.replace(/^[a-z]. \[/, '[')
-    }
 
     if (line.startsWith('[ ')) {
       // skip
@@ -523,9 +506,8 @@ function handleJpLines(lines: any[]) {
 // Registrar Gandi SAS
 function handleMissingColons(lines: string[]) {
   lines.forEach((line, index) => {
-    if (line.startsWith('Registrar ')) {
+    if (line.startsWith('Registrar '))
       lines[index] = line.replace('Registrar ', 'Registrar: ')
-    }
   })
 
   return lines

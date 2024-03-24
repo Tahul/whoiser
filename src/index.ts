@@ -154,9 +154,8 @@ export async function whoisTld(
   const result = await whoisQuery({ host: 'whois.iana.org', query, timeout })
   const data = parseSimpleWhois(result)
 
-  if (raw) {
+  if (raw)
     data.__raw = result
-  }
 
   // if no whois server found, search in more sources
   if (!data.whois) {
@@ -172,9 +171,8 @@ export async function whoisTld(
     }
   }
 
-  if (!data.domain && !data.whois) {
+  if (!data.domain && !data.whois)
     throw new Error(`TLD "${query}" not found`)
-  }
 
   return data
 }
@@ -188,7 +186,8 @@ export async function whoisDomain(
   const results: Record<string, string> = {}
 
   // find WHOIS server in cache
-  if (!host && cacheTldWhoisServer[domainTld]) { host = cacheTldWhoisServer[domainTld] }
+  if (!host && cacheTldWhoisServer[domainTld])
+    host = cacheTldWhoisServer[domainTld]
 
   // find WHOIS server for TLD
   if (!host) {
@@ -201,9 +200,8 @@ export async function whoisDomain(
 	  },
     )
 
-    if (!tld.whois) {
+    if (!tld.whois)
       throw new Error(`TLD for "${domain}" not supported`)
-    }
 
     host = tld.whois as string
     cacheTldWhoisServer[domainTld] = tld.whois as string
@@ -216,12 +214,11 @@ export async function whoisDomain(
     let resultRaw
 
     // hardcoded WHOIS queries..
-    if (host === 'whois.denic.de') {
+    if (host === 'whois.denic.de')
       query = `-T dn ${punycode.toUnicode(domain)}`
-    }
-    else if (host === 'whois.jprs.jp') {
+
+    else if (host === 'whois.jprs.jp')
       query = `${query}/e`
-    }
 
     try {
       resultRaw = await whoisQuery({ host, query, timeout })
@@ -231,9 +228,8 @@ export async function whoisDomain(
       result = { error: err?.message }
     }
 
-    if (raw) {
+    if (raw)
       result.__raw = resultRaw
-    }
 
     results[host] = result
 
@@ -250,9 +246,8 @@ export async function whoisDomain(
 			|| false
 
     // fill in WHOIS servers when missing
-    if (!nextWhoisServer && result['Registrar URL'] && result['Registrar URL'].includes('domains.google')) {
+    if (!nextWhoisServer && result['Registrar URL'] && result['Registrar URL'].includes('domains.google'))
       nextWhoisServer = 'whois.google.com'
-    }
 
     if (nextWhoisServer) {
       // if found, remove protocol and path
@@ -286,12 +281,12 @@ export async function whoisIpOrAsn(
   if (!host) {
     const whoisResult = await whoisQuery({ host: 'whois.iana.org', query, timeout })
     const parsedWhoisResult = parseSimpleWhois(whoisResult)
-    if (parsedWhoisResult.whois) { host = parsedWhoisResult.whois }
+    if (parsedWhoisResult.whois)
+      host = parsedWhoisResult.whois
   }
 
-  if (!host) {
+  if (!host)
     throw new Error(`No WHOIS server for "${query}"`)
-  }
 
   let data
 
@@ -299,19 +294,17 @@ export async function whoisIpOrAsn(
     let modifiedQuery = query
 
     // hardcoded custom queries..
-    if (host === 'whois.arin.net' && type === 'ip') {
+    if (host === 'whois.arin.net' && type === 'ip')
       modifiedQuery = `+ n ${query}`
-    }
-    else if (host === 'whois.arin.net' && type === 'asn') {
+
+    else if (host === 'whois.arin.net' && type === 'asn')
       modifiedQuery = `+ a ${query}`
-    }
 
     const rawResult = await whoisQuery({ host, query: modifiedQuery, timeout })
     data = parseSimpleWhois(rawResult)
 
-    if (raw) {
+    if (raw)
       data.__raw = rawResult
-    }
 
     follow--
     host = data?.ReferralServer?.split('//')?.[1]
@@ -327,15 +320,14 @@ export function firstResult(whoisResults: any) {
 }
 
 export function base(query: string, options?: OptionsGeneric & { [key: string]: string | number }): Promise<WhoisSearchResult> {
-  if (net.isIP(query) || /^(as)?\d+$/i.test(query)) {
+  if (net.isIP(query) || /^(as)?\d+$/i.test(query))
     return whoisIpOrAsn(query, options)
-  }
-  else if (isTld(query)) {
+
+  else if (isTld(query))
     return whoisTld(query, options as any)
-  }
-  else if (isDomain(query)) {
+
+  else if (isDomain(query))
     return whoisDomain(query, options)
-  }
 
   throw new Error('Unrecognized query. Try a domain (google.com), IP (1.1.1.1) or TLD (.blog)')
 }

@@ -30,7 +30,8 @@
     "lint:fix": "eslint --cache --fix --quiet",
     "release": "release-it",
     "test": "pnpm lint && vitest run --coverage",
-    "test:ui": "vitest --ui --open=false"
+    "test:ui": "vitest --ui --open=false",
+    "typecheck": "tsc --noEmit --skipLibCheck"
   },
   "dependencies": {
     "punycode": "2.3.1"

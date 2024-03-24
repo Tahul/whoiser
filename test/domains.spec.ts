@@ -111,7 +111,7 @@ describe('#whoiser.domain()', () => {
       const whois = await whoiser.domain('google.it')
       assert.equal(whois['whois.nic.it']['Domain Name'], 'google.it', 'Domain name doesn\'t match')
       assert.equal(whois['whois.nic.it']['Name Server'].length, 4, 'Incorrect number of NS returned')
-      assert.equal(whois['whois.nic.it'].Registrar, 'MarkMonitor International Limited MARKMONITOR-REG', 'Registrar name doesn\'t match')
+      assert.equal((whois['whois.nic.it'] as any).Registrar, 'MarkMonitor International Limited MARKMONITOR-REG', 'Registrar name doesn\'t match')
       assert.equal(whois['whois.nic.it']['Created Date'], '1999-12-10 00:00:00', 'Creation date doesn\'t match')
       for (const property of ['Registrant', 'Admin Contact', 'Technical Contacts']) {
         const label = `${property} Created`
