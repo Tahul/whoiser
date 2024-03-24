@@ -1,6 +1,6 @@
 import net from 'node:net'
 import dns from 'node:dns/promises'
-import punycode from 'punycode/punycode'
+import punycode from '@tahul/punycode'
 import type socks from 'socks'
 import { SocksClient } from 'socks'
 import { parseDomainWhois, parseSimpleWhois } from './parsers'

@@ -5,9 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
-  punycode:
-    specifier: 2.3.1
-    version: 2.3.1
+  '@tahul/punycode':
+    specifier: ^2.3.4
+    version: 2.3.4
   socks:
     specifier: ^2.8.1
     version: 2.8.1
@@ -1348,6 +1348,11 @@ packages:
     dependencies:
       defer-to-connect: 2.0.1
     dev: true
+
+  /@tahul/punycode@2.3.4:
+    resolution: {integrity: sha512-W3jmrdOGSWCpUIfrtrew8vUVdH0hnntZSKqBHKxZXTEVugGtbY337GCbeWIrmEi/lSwa/u00zKUYNKRJv/0Dsw==}
+    engines: {node: '>=6'}
+    dev: false
 
   /@tootallnate/quickjs-emscripten@0.23.0:
     resolution: {integrity: sha512-C5Mc6rdnsaJDjO3UpGW/CQTHtCKaYlScZTly4JIu97Jxo/odCiH0ITnDXSJPTOrEKk/ycSZ0AOgTmkDtkOsvIA==}
@@ -5520,6 +5525,7 @@ packages:
   /punycode@2.3.1:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
+    dev: true
 
   /pupa@3.1.0:
     resolution: {integrity: sha512-FLpr4flz5xZTSJxSeaheeMKN/EDzMdK7b8PTOC6a5PYFKTucWbdqjgqaEyH0shFiSJrVB1+Qqi4Tk19ccU6Aug==}
