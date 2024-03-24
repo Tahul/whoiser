@@ -20,9 +20,15 @@
     "tld",
     "ip"
   ],
-  "main": "index.js",
-  "types": "./index.d.ts",
-  "typings": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "build": "unbuild -c build.config.ts",
     "stub": "unbuild -c build.config.ts --stub",
