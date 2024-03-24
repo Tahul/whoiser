@@ -40,7 +40,8 @@
     "typecheck": "tsc --noEmit --skipLibCheck"
   },
   "dependencies": {
-    "punycode": "2.3.1"
+    "punycode": "2.3.1",
+    "socks": "^2.8.1"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^2.9.0",

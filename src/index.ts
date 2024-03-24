@@ -1,6 +1,8 @@
 import net from 'node:net'
 import dns from 'node:dns/promises'
 import punycode from 'punycode/punycode'
+import type socks from 'socks'
+import { SocksClient } from 'socks'
 import { parseDomainWhois, parseSimpleWhois } from './parsers'
 import { isDomain, isTld, requestGetBody, splitStringBy } from './utils'
 
@@ -49,6 +51,11 @@ export interface Options {
    * @default true
    */
   ignorePrivacy?: boolean
+
+  /**
+   * Proxy options for SOCKS5 proxy
+   */
+  proxyOptions?: socks.SocksProxy
 }
 
 export type OptionsIp = Pick<Options, 'host' | 'timeout' | 'raw'>
@@ -117,17 +124,41 @@ const misspelledWhoisServer = {
   'WWW.GNAME.COM/WHOIS': 'whois.gname.com',
 } as const
 
-export function whoisQuery(
-  { host = undefined, port = 43, timeout = 15000, query = '', querySuffix = '\r\n' }: { host?: string, port?: number, timeout?: number, query?: string, querySuffix?: string } = {},
-): Promise<string> {
+export function whoisQuery({ host = undefined, port = 43, timeout = 15000, query = '', querySuffix = '\r\n', proxyOptions = undefined }: { host?: string, port?: number, timeout?: number, query?: string, querySuffix?: string, proxyOptions?: socks.SocksProxy } = {}) {
   return new Promise((resolve, reject) => {
     let data = ''
-    const socket = net.connect({ host, port } as unknown as net.NetConnectOpts, () => { socket.write(query + querySuffix) })
-    socket.setTimeout(timeout)
-    socket.on('data', chunk => (data += chunk))
-    socket.on('close', () => resolve(data))
-    socket.on('timeout', () => socket.destroy(new Error('Timeout')))
-    socket.on('error', reject)
+
+    function addSocketEvents(socket: any) {
+      socket.setTimeout(timeout)
+      socket.on('data', (chunk: any) => (data += chunk))
+      socket.on('close', () => resolve(data))
+      socket.on('timeout', () => socket.destroy(new Error('Timeout')))
+      socket.on('error', reject)
+    }
+
+    const socket = proxyOptions
+      ? SocksClient.createConnection(
+        {
+          proxy: proxyOptions,
+          command: 'connect',
+          destination: {
+            host: host as string,
+            port,
+          },
+        },
+        (err, info) => {
+          if (err) { reject(err) }
+          else {
+            addSocketEvents(info?.socket)
+            if (info)
+              info.socket.write(query + querySuffix)
+          }
+        },
+			  )
+      : net.connect({ host, port }, () => {
+        	addSocketEvents(socket)
+        	;(socket as any).write(query + querySuffix)
+      })
   })
 }
 
@@ -149,10 +180,10 @@ async function whoisTldAlternate(query?: string): Promise<WhoisSearchResult> {
 
 export async function whoisTld(
   query?: string,
-  { timeout = 15000, raw = false, domainTld = '' }: { timeout?: number, raw?: boolean, domainTld?: string, domainName?: string } & { [key: string]: string | number } = {},
+  { timeout = 15000, raw = false, domainTld = '', proxyOptions = undefined }: { timeout?: number, raw?: boolean, domainTld?: string, domainName?: string, proxyOptions?: socks.SocksProxy } = {},
 ): Promise<WhoisSearchResult> {
-  const result = await whoisQuery({ host: 'whois.iana.org', query, timeout })
-  const data = parseSimpleWhois(result)
+  const result = await whoisQuery({ host: 'whois.iana.org', query, timeout, proxyOptions })
+  const data = parseSimpleWhois(result as any)
 
   if (raw)
     data.__raw = result
@@ -179,7 +210,7 @@ export async function whoisTld(
 
 export async function whoisDomain(
   domain: string,
-  { host = undefined, timeout = 15000, follow = 2, raw = false, ignorePrivacy = true }: { host?: string, timeout?: number, follow?: number, raw?: boolean, ignorePrivacy?: boolean } & { [key: string]: string | number } = {},
+  { host = undefined, timeout = 15000, follow = 2, raw = false, ignorePrivacy = true, proxyOptions = undefined }: { host?: string, timeout?: number, follow?: number, raw?: boolean, ignorePrivacy?: boolean, proxyOptions?: socks.SocksProxy } = {},
 ): Promise<WhoisSearchResult> {
   domain = punycode.toASCII(domain)
   const [domainName, domainTld] = splitStringBy(domain.toLowerCase(), domain.lastIndexOf('.'))
@@ -197,6 +228,7 @@ export async function whoisDomain(
         timeout,
         domainName,
         domainTld,
+        proxyOptions,
 	  },
     )
 
@@ -221,8 +253,8 @@ export async function whoisDomain(
       query = `${query}/e`
 
     try {
-      resultRaw = await whoisQuery({ host, query, timeout })
-      result = parseDomainWhois(domain, resultRaw, ignorePrivacy)
+      resultRaw = await whoisQuery({ host, query, timeout, proxyOptions })
+      result = parseDomainWhois(domain, resultRaw as any, ignorePrivacy)
     }
     catch (err: any) {
       result = { error: err?.message }
@@ -280,7 +312,7 @@ export async function whoisIpOrAsn(
   // find WHOIS server for IP
   if (!host) {
     const whoisResult = await whoisQuery({ host: 'whois.iana.org', query, timeout })
-    const parsedWhoisResult = parseSimpleWhois(whoisResult)
+    const parsedWhoisResult = parseSimpleWhois(whoisResult as any)
     if (parsedWhoisResult.whois)
       host = parsedWhoisResult.whois
   }
@@ -301,7 +333,7 @@ export async function whoisIpOrAsn(
       modifiedQuery = `+ a ${query}`
 
     const rawResult = await whoisQuery({ host, query: modifiedQuery, timeout })
-    data = parseSimpleWhois(rawResult)
+    data = parseSimpleWhois(rawResult as any)
 
     if (raw)
       data.__raw = rawResult
