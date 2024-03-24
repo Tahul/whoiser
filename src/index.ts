@@ -36,6 +36,10 @@ export interface Options {
    */
   raw?: boolean
 
+  domainTld?: string
+
+  domainName?: string
+
   query?: string
 
   /**
@@ -58,10 +62,10 @@ export interface Options {
   proxyOptions?: socks.SocksProxy
 }
 
-export type OptionsIp = Pick<Options, 'host' | 'timeout' | 'raw'>
+export type OptionsIp = Pick<Options, 'host' | 'timeout' | 'raw' | 'follow'>
 export type OptionsAsn = OptionsIp
 export type OptionsQuery = Omit<Options, 'raw' | 'follow'>
-export type OptionsTld = Pick<Options, 'timeout' | 'raw'>
+export type OptionsTld = Pick<Options, 'timeout' | 'raw' | 'proxyOptions' | 'domainTld' | 'domainName'>
 export type OptionsDomain = Omit<Options, 'querySuffix' | 'query' | 'port'>
 export type OptionsGeneric = OptionsIp | OptionsTld | OptionsDomain
 
@@ -124,7 +128,7 @@ const misspelledWhoisServer = {
   'WWW.GNAME.COM/WHOIS': 'whois.gname.com',
 } as const
 
-export function whoisQuery({ host = undefined, port = 43, timeout = 15000, query = '', querySuffix = '\r\n', proxyOptions = undefined }: { host?: string, port?: number, timeout?: number, query?: string, querySuffix?: string, proxyOptions?: socks.SocksProxy } = {}) {
+export function whoisQuery({ host = undefined, port = 43, timeout = 15000, query = '', querySuffix = '\r\n', proxyOptions = undefined }: Options = {}) {
   return new Promise((resolve, reject) => {
     let data = ''
 
@@ -180,7 +184,7 @@ async function whoisTldAlternate(query?: string): Promise<WhoisSearchResult> {
 
 export async function whoisTld(
   query?: string,
-  { timeout = 15000, raw = false, domainTld = '', proxyOptions = undefined }: { timeout?: number, raw?: boolean, domainTld?: string, domainName?: string, proxyOptions?: socks.SocksProxy } = {},
+  { timeout = 15000, raw = false, domainTld = '', proxyOptions = undefined }: OptionsTld = {},
 ): Promise<WhoisSearchResult> {
   const result = await whoisQuery({ host: 'whois.iana.org', query, timeout, proxyOptions })
   const data = parseSimpleWhois(result as any)
@@ -208,9 +212,9 @@ export async function whoisTld(
   return data
 }
 
-export async function whoisDomain(
+async function whoisDomain(
   domain: string,
-  { host = undefined, timeout = 15000, follow = 2, raw = false, ignorePrivacy = true, proxyOptions = undefined }: { host?: string, timeout?: number, follow?: number, raw?: boolean, ignorePrivacy?: boolean, proxyOptions?: socks.SocksProxy } = {},
+  { host = undefined, timeout = 15000, follow = 2, raw = false, ignorePrivacy = true, proxyOptions = undefined }: OptionsDomain = {},
 ): Promise<WhoisSearchResult> {
   domain = punycode.toASCII(domain)
   const [domainName, domainTld] = splitStringBy(domain.toLowerCase(), domain.lastIndexOf('.'))
@@ -302,9 +306,9 @@ export async function whoisDomain(
   return results
 }
 
-export async function whoisIpOrAsn(
+async function whoisIpOrAsn(
   query: string | number,
-  { host = undefined, timeout = 15000, follow = 2, raw = false }: { host?: string, timeout?: number, follow?: number, raw?: boolean } & { [key: string]: string | number } = {},
+  { host = undefined, timeout = 15000, follow = 2, raw = false }: OptionsAsn = {},
 ): Promise<WhoisSearchResult> {
   const type = net.isIP(query?.toString() || query as string) ? 'ip' : 'asn'
   query = String(query)
@@ -351,7 +355,7 @@ export function firstResult(whoisResults: any) {
   return whoisServers.length ? whoisResults[whoisServers[0]] : null
 }
 
-export function base(query: string, options?: OptionsGeneric & { [key: string]: string | number }): Promise<WhoisSearchResult> {
+export function base(query: string, options?: OptionsGeneric): Promise<WhoisSearchResult> {
   if (net.isIP(query) || /^(as)?\d+$/i.test(query))
     return whoisIpOrAsn(query, options)
 
