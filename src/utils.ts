@@ -1,5 +1,5 @@
 import https from 'node:https'
-import punycode from 'punycode/'
+import punycode from 'punycode/index'
 
 export const splitStringBy = (string: string, by: number) => [string.slice(0, by), string.slice(by + 1)]
 
